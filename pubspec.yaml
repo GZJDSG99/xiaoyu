@@ -1,0 +1,64 @@
+name: xiaoyu
+description: 小语（CarTalk）——把手机变成车载情绪显示器
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.6.1
+  go_router: ^15.1.2
+  shared_preferences: ^2.5.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  wakelock_plus: ^1.3.2
+  flutter_svg: ^2.1.0
+  image_picker: ^1.1.2
+  path: ^1.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# path_provider_foundation 2.6+ 依赖 objective_c，其 hook 使用
+# Architecture.arm64e，与当前 Flutter/Dart 的 code_assets 不兼容，导致 Web/Windows 构建失败。
+dependency_overrides:
+  path_provider_foundation: 2.5.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: xiaoyu.png
+  adaptive_icon_background: "#B7D2F4"
+  adaptive_icon_foreground: xiaoyu.png
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: xiaoyu.png
+  windows:
+    generate: true
+    image_path: xiaoyu.png
+  macos:
+    generate: true
+    image_path: xiaoyu.png
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/pets/cat/
+    - assets/pets/bear/
+    - assets/pets/dog/
+    - assets/pets/rabbit/
+    - assets/pets/dinosaur/
+    - assets/pets/penguin/
+    - assets/pets/robot/
+    - assets/expressions/
+    - assets/animations/
+    - assets/icons/
+    - assets/backgrounds/
