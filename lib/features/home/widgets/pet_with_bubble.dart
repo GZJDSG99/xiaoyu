@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../../data/models/pet.dart';
 import '../../pet/widgets/pet_avatar.dart';
+import '../../../core/images/asset_warmup.dart';
 import '../providers/pet_form_provider.dart';
 import 'one_shot_asset_gif.dart';
 import 'speech_bubble.dart';
@@ -33,7 +34,7 @@ const _kSettleDuration = Duration(milliseconds: 240);
 const _kFallbackGifDuration = Duration(milliseconds: 800);
 /// 变身收尾交叉淡入，避免黑场拼接感
 const _kTransformCrossfade = Duration(milliseconds: 280);
-/// 变身过渡动画放大（相对素材；外层已用到人形态倍率时会换算）
+/// 变身过渡动画放大
 const _kTransformAnimScale = 1.72;
 /// 人形态待机放大
 const _kHumanIdleScale = 1.8;
@@ -80,6 +81,8 @@ class _PetWithBubbleState extends ConsumerState<PetWithBubble>
 
   /// 变身过渡层透明度（1=播 change.gif，淡出后露出目标待机）
   double _changeOpacity = 0;
+  /// 变身 GIF 首帧已就绪（未就绪前继续露底层，避免黑闪）
+  bool _changeReady = false;
   int _changeGen = 0;
 
   double _settledX = 0;
@@ -152,16 +155,10 @@ class _PetWithBubbleState extends ConsumerState<PetWithBubble>
 
   double get _formScale {
     if (widget.sleepIdle) return 1.0;
-    // 变身一开始就切到人形态倍率，避免结束后再看到放大过程
-    if (_transforming || ref.watch(kkTransformedProvider)) {
-      return _kHumanIdleScale;
-    }
+    // 仅人形态放大；变身过程中猫仍 1.0，避免一瞬间被放大
+    if (ref.watch(kkTransformedProvider)) return _kHumanIdleScale;
     return 1.0;
   }
-
-  /// 变身 GIF 在已放大的人形态容器内，换算回目标视觉倍率
-  double get _transformGifRelativeScale =>
-      _kTransformAnimScale / _kHumanIdleScale;
 
   Future<Duration> _ensureGifDurationFor(String path) async {
     final cached = _gifDurationCache[path];
@@ -308,10 +305,27 @@ class _PetWithBubbleState extends ConsumerState<PetWithBubble>
       return;
     }
 
-    // 猫 → 人：逐帧只播一遍 change，再交叉淡入人形态
+    // 猫 → 人：先预热变身/人形 GIF，再播 change，避免首帧黑闪
     _busy = true;
+    final changePath = widget.pet?.transformAssetPath;
+    final kkPath = widget.pet?.transformedIdleAssetPath;
+    if (changePath != null) {
+      await AssetWarmup.warmAction(context, changePath);
+    }
+    if (!mounted) {
+      _busy = false;
+      return;
+    }
+    if (kkPath != null) {
+      await AssetWarmup.warmAction(context, kkPath);
+    }
+    if (!mounted) {
+      _busy = false;
+      return;
+    }
     setState(() {
       _transforming = true;
+      _changeReady = false;
       _changeOpacity = 1;
       _changeGen++;
       _poseOpacity = 1;
@@ -330,6 +344,7 @@ class _PetWithBubbleState extends ConsumerState<PetWithBubble>
     setState(() {
       _transforming = false;
       _changeOpacity = 0;
+      _changeReady = false;
       _poseGen++;
     });
     _busy = false;
@@ -410,7 +425,7 @@ class _PetWithBubbleState extends ConsumerState<PetWithBubble>
                           ),
                           child: AnimatedScale(
                             scale: formScale,
-                            // 变身开始瞬间到位；结束后倍率不变，不会再看到放大
+                            // 切到人形态时瞬间到位（仍在变身淡出中），避免事后放大
                             duration: _transforming
                                 ? Duration.zero
                                 : const Duration(milliseconds: 420),
@@ -422,28 +437,33 @@ class _PetWithBubbleState extends ConsumerState<PetWithBubble>
                               alignment: Alignment.bottomCenter,
                               children: [
                                 // 变身播 change 时不露猫待机；交叉淡入后才显示目标形态
-                                if (!_transforming || _changeOpacity < 1)
+                                if (!_transforming ||
+                                    _changeOpacity < 1 ||
+                                    !_changeReady)
                                   PetAvatar(
+                                    // 不把 assetPath 写进 key，便于 gapless 衔接
                                     key: ValueKey(
                                       _jumping
                                           ? 'jump_${widget.pet?.id}_$_jumpGen'
-                                          : 'base_${widget.pet?.id}_${basePet?.assetPath}_$_poseGen',
+                                          : 'base_${widget.pet?.id}',
                                     ),
                                     pet: _jumping ? jumpPet : basePet,
                                     borderRadius: 0,
                                     fit: BoxFit.contain,
                                     alignment: Alignment.bottomCenter,
                                   ),
-                                // 顶层：变身 GIF 逐帧只播一遍，末帧淡出衔接到人形态
+                                // 顶层：变身 GIF 独立 1.72 倍，不带动底层猫放大
                                 if (_transforming &&
                                     widget.pet?.transformAssetPath != null)
                                   IgnorePointer(
                                     child: AnimatedOpacity(
-                                      opacity: _changeOpacity,
-                                      duration: _kTransformCrossfade,
+                                      opacity: _changeReady ? _changeOpacity : 0,
+                                      duration: _changeReady
+                                          ? _kTransformCrossfade
+                                          : Duration.zero,
                                       curve: Curves.easeInOutCubic,
                                       child: Transform.scale(
-                                        scale: _transformGifRelativeScale,
+                                        scale: _kTransformAnimScale,
                                         alignment: Alignment.bottomCenter,
                                         child: OneShotAssetGif(
                                           key: ValueKey(
@@ -454,6 +474,12 @@ class _PetWithBubbleState extends ConsumerState<PetWithBubble>
                                           fit: BoxFit.contain,
                                           alignment: Alignment.bottomCenter,
                                           playFraction: 0.9,
+                                          onReady: () {
+                                            if (!mounted || !_transforming) {
+                                              return;
+                                            }
+                                            setState(() => _changeReady = true);
+                                          },
                                           onCompleted: _onChangeGifCompleted,
                                         ),
                                       ),

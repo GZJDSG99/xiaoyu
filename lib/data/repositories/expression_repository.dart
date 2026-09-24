@@ -10,10 +10,11 @@ import '../models/pet_enums.dart';
 const kDefaultCategories = <Category>[
   Category(id: 'polite', name: '礼貌沟通', icon: '🙏', sortOrder: 0),
   Category(id: 'driving', name: '行车表达', icon: '🚗', sortOrder: 1),
-  Category(id: 'funny', name: '搞怪有趣', icon: '😂', sortOrder: 2),
-  Category(id: 'festival', name: '节日', icon: '🎉', sortOrder: 3),
-  Category(id: 'social', name: '情侣/朋友', icon: '❤️', sortOrder: 4),
-  Category(id: 'custom', name: '自定义', icon: '✨', sortOrder: 5),
+  Category(id: 'car_sticker', name: '车贴系列', icon: '🟡', sortOrder: 2),
+  Category(id: 'funny', name: '搞怪有趣', icon: '😂', sortOrder: 3),
+  Category(id: 'festival', name: '节日', icon: '🎉', sortOrder: 4),
+  Category(id: 'social', name: '情侣/朋友', icon: '❤️', sortOrder: 5),
+  Category(id: 'custom', name: '自定义', icon: '✨', sortOrder: 6),
 ];
 
 const kDefaultExpressions = <Expression>[
@@ -75,7 +76,7 @@ const kDefaultExpressions = <Expression>[
     petAction: PetAction.warning,
     animation: DisplayAnimation.pulse,
     duration: Duration(seconds: 6),
-    iconAsset: 'assets/icons/car.svg',
+    iconAsset: 'assets/expressions/drive.gif',
   ),
   Expression(
     id: 'hug',
@@ -106,6 +107,36 @@ const kDefaultExpressions = <Expression>[
     duration: Duration(seconds: 8),
   ),
   Expression(
+    id: 'car_sticker_gaoshou',
+    categoryId: 'car_sticker',
+    emoji: '🟡',
+    title: '高手',
+    petAction: PetAction.custom,
+    animation: DisplayAnimation.scale,
+    duration: Duration(seconds: 6),
+    iconAsset: 'assets/expressions/car_gaoshou.png',
+  ),
+  Expression(
+    id: 'car_sticker_shixi',
+    categoryId: 'car_sticker',
+    emoji: '🟡',
+    title: '实习',
+    petAction: PetAction.custom,
+    animation: DisplayAnimation.scale,
+    duration: Duration(seconds: 6),
+    iconAsset: 'assets/expressions/car_shixi.png',
+  ),
+  Expression(
+    id: 'car_sticker_youxiu',
+    categoryId: 'car_sticker',
+    emoji: '🟡',
+    title: '优秀',
+    petAction: PetAction.custom,
+    animation: DisplayAnimation.scale,
+    duration: Duration(seconds: 6),
+    iconAsset: 'assets/expressions/car_youxiu.png',
+  ),
+  Expression(
     id: 'hahaha',
     categoryId: 'funny',
     emoji: '😂',
@@ -114,6 +145,16 @@ const kDefaultExpressions = <Expression>[
     animation: DisplayAnimation.bounce,
     duration: Duration(seconds: 4),
     iconAsset: 'assets/icons/happy.svg',
+  ),
+  Expression(
+    id: 'brain_blank',
+    categoryId: 'funny',
+    emoji: '🧠',
+    title: '大脑一片空白',
+    petAction: PetAction.custom,
+    animation: DisplayAnimation.fade,
+    duration: Duration(seconds: 6),
+    iconAsset: 'assets/expressions/kb.jpg',
   ),
   Expression(
     id: 'good_night',
@@ -156,6 +197,7 @@ abstract class ExpressionRepository {
   Future<void> toggleFavorite(String expressionId);
   List<CustomExpression> getCustom();
   Future<void> saveCustom(CustomExpression expression);
+  Future<void> deleteCustom(String id);
 }
 
 class LocalExpressionRepository implements ExpressionRepository {
@@ -227,6 +269,14 @@ class LocalExpressionRepository implements ExpressionRepository {
       ..._storage.customExpressions.map((e) => Map<String, dynamic>.from(e)),
     ]..removeWhere((e) => e['id'] == expression.id);
     items.insert(0, expression.toJson());
+    await _storage.setCustomExpressions(items);
+  }
+
+  @override
+  Future<void> deleteCustom(String id) async {
+    final items = [
+      ..._storage.customExpressions.map((e) => Map<String, dynamic>.from(e)),
+    ]..removeWhere((e) => e['id'] == id);
     await _storage.setCustomExpressions(items);
   }
 }

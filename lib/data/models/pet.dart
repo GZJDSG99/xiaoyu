@@ -28,6 +28,9 @@ class Pet {
   /// 变身后待机素材
   final String? transformedIdleAssetPath;
 
+  /// 选中该宠物时自动切换的专属背景 id
+  final String? exclusiveBackgroundId;
+
   /// 是否可选（未出设计的宠物为 false，展示「待领养」）
   final bool available;
 
@@ -44,6 +47,7 @@ class Pet {
     this.sleepAssetPath,
     this.transformAssetPath,
     this.transformedIdleAssetPath,
+    this.exclusiveBackgroundId,
     this.available = true,
   });
 
@@ -129,6 +133,7 @@ class Pet {
     String? sleepAssetPath,
     String? transformAssetPath,
     String? transformedIdleAssetPath,
+    String? exclusiveBackgroundId,
     bool? available,
   }) {
     return Pet(
@@ -145,6 +150,8 @@ class Pet {
       transformAssetPath: transformAssetPath ?? this.transformAssetPath,
       transformedIdleAssetPath:
           transformedIdleAssetPath ?? this.transformedIdleAssetPath,
+      exclusiveBackgroundId:
+          exclusiveBackgroundId ?? this.exclusiveBackgroundId,
       available: available ?? this.available,
     );
   }

@@ -67,5 +67,11 @@
 	<string>用于上传 DIY 表情包图片或 GIF</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>用于保存 DIY 表情包</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>用于手机与七寸显示端在局域网内配对连接</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_xiaoyu-display._tcp</string>
+	</array>
 </dict>
 </plist>

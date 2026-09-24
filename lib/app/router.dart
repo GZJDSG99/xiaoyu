@@ -3,13 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/local/local_storage.dart';
+import '../features/danmaku/pages/danmaku_fullscreen_page.dart';
+import '../features/danmaku/pages/danmaku_page.dart';
+import '../features/danmaku/providers/danmaku_play_provider.dart';
 import '../features/diy/pages/diy_page.dart';
+import '../features/diy/pages/meme_maker_page.dart';
+import '../features/display/pages/display_host_page.dart';
 import '../features/display/pages/fullscreen_display_page.dart';
 import '../features/expression/pages/expression_category_page.dart';
 import '../features/expression/pages/expression_detail_page.dart';
 import '../features/home/pages/home_page.dart';
 import '../features/pet/pages/pet_select_page.dart';
 import '../features/settings/pages/background_select_page.dart';
+import '../features/settings/pages/display_connect_page.dart';
 import '../features/settings/pages/settings_page.dart';
 import '../features/shell/main_shell.dart';
 
@@ -80,6 +86,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: '/diy',
                 name: 'diy',
                 builder: (context, state) => const DiyPage(),
+                routes: [
+                  GoRoute(
+                    path: 'meme',
+                    name: 'diyMeme',
+                    builder: (context, state) => const MemeMakerPage(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/danmaku',
+                name: 'danmaku',
+                builder: (context, state) => const DanmakuPage(),
               ),
             ],
           ),
@@ -104,6 +126,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             expressionId: expressionId,
             customText: customText,
           );
+        },
+      ),
+      GoRoute(
+        path: '/display-host',
+        name: 'displayHost',
+        builder: (context, state) => const DisplayHostPage(),
+      ),
+      GoRoute(
+        path: '/display-connect',
+        name: 'displayConnect',
+        builder: (context, state) => const DisplayConnectPage(),
+      ),
+      GoRoute(
+        path: '/danmaku/play',
+        name: 'danmakuPlay',
+        builder: (context, state) {
+          final config = ref.read(pendingDanmakuConfigProvider);
+          if (config == null || config.lines.isEmpty) {
+            return const DanmakuPage();
+          }
+          return DanmakuFullscreenPage(config: config);
         },
       ),
     ],

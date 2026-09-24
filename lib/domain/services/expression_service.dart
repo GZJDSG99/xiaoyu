@@ -6,12 +6,20 @@ import '../../data/repositories/expression_repository.dart';
 import '../display/display_device.dart';
 import '../display/phone_display_device.dart';
 
+/// 自定义表情列表变更计数（触发表情页刷新）
+final customExpressionsTickProvider = StateProvider<int>((ref) => 0);
+
 /// 表情业务：最近使用、收藏、推送到 DisplayDevice
 class ExpressionService {
-  ExpressionService(this._repository, this._display);
+  ExpressionService(
+    this._repository,
+    this._display, {
+    void Function()? onCustomChanged,
+  }) : _onCustomChanged = onCustomChanged;
 
   final ExpressionRepository _repository;
   final DisplayDevice _display;
+  final void Function()? _onCustomChanged;
 
   List<Expression> getQuickExpressions() {
     final recent = _repository.getRecent();
@@ -32,8 +40,26 @@ class ExpressionService {
     await _display.show(expression);
   }
 
-  Future<void> playCustom(CustomExpression expression) async {
+  /// 仅全屏预览，不写入自定义列表
+  Future<void> previewCustom(CustomExpression expression) {
+    return _display.showCustom(expression);
+  }
+
+  /// 仅保存到「自定义」分类
+  Future<void> saveCustom(CustomExpression expression) async {
     await _repository.saveCustom(expression);
+    _onCustomChanged?.call();
+  }
+
+  /// 从「自定义」分类删除
+  Future<void> deleteCustom(String id) async {
+    await _repository.deleteCustom(id);
+    _onCustomChanged?.call();
+  }
+
+  /// 保存并展示（兼容旧调用）
+  Future<void> playCustom(CustomExpression expression) async {
+    await saveCustom(expression);
     await _display.showCustom(expression);
   }
 
@@ -46,5 +72,8 @@ final expressionServiceProvider = Provider<ExpressionService>((ref) {
   return ExpressionService(
     ref.watch(expressionRepositoryProvider),
     ref.watch(displayDeviceProvider),
+    onCustomChanged: () {
+      ref.read(customExpressionsTickProvider.notifier).state++;
+    },
   );
 });

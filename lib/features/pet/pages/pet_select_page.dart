@@ -8,6 +8,7 @@ import '../../../data/local/local_storage.dart';
 import '../../../data/models/pet.dart';
 import '../../../data/repositories/pet_repository.dart';
 import '../../../domain/services/pet_service.dart';
+import '../../home/providers/pet_form_provider.dart';
 import '../widgets/pet_avatar.dart';
 
 class PetSelectPage extends ConsumerStatefulWidget {
@@ -41,6 +42,7 @@ class _PetSelectPageState extends ConsumerState<PetSelectPage> {
           id,
           completeFirstLaunch: widget.isFirstLaunch,
         );
+    ref.read(kkTransformedProvider.notifier).state = false;
     if (!mounted) return;
     context.go('/');
   }

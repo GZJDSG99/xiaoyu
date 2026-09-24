@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../data/repositories/expression_repository.dart';
-import '../../../data/repositories/pet_repository.dart';
+import '../../pet/providers/current_pet_provider.dart';
 import '../../pet/widgets/pet_avatar.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -13,7 +13,7 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final petFuture = ref.watch(petRepositoryProvider).getCurrent();
+    final pet = ref.watch(currentPetProvider);
     final favorites = ref.watch(expressionRepositoryProvider).getFavorites();
     final recent = ref.watch(expressionRepositoryProvider).getRecent();
 
@@ -21,21 +21,15 @@ class SettingsPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('我的')),
       body: ListView(
         children: [
-          FutureBuilder(
-            future: petFuture,
-            builder: (context, snapshot) {
-              final pet = snapshot.data;
-              return ListTile(
-                leading: PetAvatar(pet: pet, size: 40, borderRadius: 10),
-                title: Text(pet?.name ?? '未选择宠物', style: AppTextStyles.title),
-                subtitle: Text(
-                  pet?.personality ?? '去选择你的小语伙伴',
-                  style: AppTextStyles.bodySecondary,
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/pet-select'),
-              );
-            },
+          ListTile(
+            leading: PetAvatar(pet: pet, size: 40, borderRadius: 10),
+            title: Text(pet?.name ?? '未选择宠物', style: AppTextStyles.title),
+            subtitle: Text(
+              pet?.personality ?? '去选择你的小语伙伴',
+              style: AppTextStyles.bodySecondary,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/pet-select'),
           ),
           const Divider(color: AppColors.border),
           ListTile(
@@ -56,6 +50,20 @@ class SettingsPage extends ConsumerWidget {
             subtitle: const Text('首页氛围背景', style: AppTextStyles.caption),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/backgrounds'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.cast),
+            title: const Text('连接显示器'),
+            subtitle: const Text('手机遥控七寸显示端', style: AppTextStyles.caption),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/display-connect'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.tv_outlined),
+            title: const Text('作为显示端'),
+            subtitle: const Text('本机作为七寸显示器', style: AppTextStyles.caption),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/display-host'),
           ),
           ListTile(
             leading: const Icon(Icons.settings_outlined),

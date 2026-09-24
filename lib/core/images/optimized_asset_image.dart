@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'asset_decode_size.dart';
 
 /// 本地资源图（含 GIF）优化加载：分桶降采样 + 缓存命中直出 + 切换无缝
-class OptimizedAssetImage extends StatelessWidget {
+class OptimizedAssetImage extends StatefulWidget {
   const OptimizedAssetImage({
     super.key,
     required this.assetPath,
@@ -15,8 +15,8 @@ class OptimizedAssetImage extends StatelessWidget {
     this.cacheWidth,
     this.cacheHeight,
     this.borderRadius,
-    this.placeholderColor = const Color(0xFF101C2B),
-    this.showLoading = true,
+    this.placeholderColor = const Color(0x00000000),
+    this.showLoading = false,
     this.errorBuilder,
   });
 
@@ -34,19 +34,27 @@ class OptimizedAssetImage extends StatelessWidget {
   final ImageErrorWidgetBuilder? errorBuilder;
 
   @override
+  State<OptimizedAssetImage> createState() => _OptimizedAssetImageState();
+}
+
+class _OptimizedAssetImageState extends State<OptimizedAssetImage> {
+  /// 上一张已成功绘出的画面，切换素材时先顶住，避免黑闪
+  Widget? _lastGoodFrame;
+
+  @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.sizeOf(context);
     final dpr = MediaQuery.devicePixelRatioOf(context);
 
-    final resolvedWidth = cacheWidth ??
-        (width != null
-            ? AssetDecodeSize.pixels(width!, dpr)
-            : AssetDecodeSize.forRole(role, screen, dpr));
+    final resolvedWidth = widget.cacheWidth ??
+        (widget.width != null
+            ? AssetDecodeSize.pixels(widget.width!, dpr)
+            : AssetDecodeSize.forRole(widget.role, screen, dpr));
 
     final provider = AssetDecodeSize.provider(
-      assetPath,
+      widget.assetPath,
       cacheWidth: resolvedWidth,
-      cacheHeight: cacheHeight,
+      cacheHeight: widget.cacheHeight,
     );
 
     final alreadyCached =
@@ -54,40 +62,50 @@ class OptimizedAssetImage extends StatelessWidget {
 
     Widget image = Image(
       image: provider,
-      width: width,
-      height: height,
-      fit: fit,
-      alignment: alignment,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      alignment: widget.alignment,
       gaplessPlayback: true,
       filterQuality: FilterQuality.low,
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        // 已在 ImageCache / 同步解码：直接展示，不再走 loading
-        if (alreadyCached || wasSynchronouslyLoaded || frame != null) {
+        final ready =
+            alreadyCached || wasSynchronouslyLoaded || frame != null;
+        if (ready) {
+          _lastGoodFrame = child;
           return child;
         }
+        // 新图未就绪：继续显示上一帧，绝不落深色底
+        if (_lastGoodFrame != null) {
+          return _lastGoodFrame!;
+        }
+        if (!widget.showLoading) {
+          return ColoredBox(color: widget.placeholderColor);
+        }
         return ColoredBox(
-          color: placeholderColor,
-          child: showLoading
-              ? const Center(
-                  child: SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              : null,
+          color: widget.placeholderColor,
+          child: const Center(
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
         );
       },
-      errorBuilder: errorBuilder ??
-          (context, error, stackTrace) => ColoredBox(color: placeholderColor),
+      errorBuilder: widget.errorBuilder ??
+          (context, error, stackTrace) {
+            if (_lastGoodFrame != null) return _lastGoodFrame!;
+            return ColoredBox(color: widget.placeholderColor);
+          },
     );
 
-    if (width == null && height == null) {
+    if (widget.width == null && widget.height == null) {
       image = SizedBox.expand(child: image);
     }
 
-    if (borderRadius != null) {
-      return ClipRRect(borderRadius: borderRadius!, child: image);
+    if (widget.borderRadius != null) {
+      return ClipRRect(borderRadius: widget.borderRadius!, child: image);
     }
     return image;
   }

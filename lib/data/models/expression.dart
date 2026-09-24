@@ -27,6 +27,17 @@ class Expression {
     this.iconAsset,
   });
 
+  /// 光栅图表情包（jpg/png/webp 等）：列表缩略图 + 全屏主视觉
+  bool get hasStickerAsset {
+    final a = iconAsset?.toLowerCase();
+    if (a == null || a.isEmpty) return false;
+    return a.endsWith('.jpg') ||
+        a.endsWith('.jpeg') ||
+        a.endsWith('.png') ||
+        a.endsWith('.webp') ||
+        a.endsWith('.gif');
+  }
+
   Expression copyWith({
     String? id,
     String? categoryId,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../core/images/asset_warmup.dart';
 import '../../../core/images/optimized_asset_image.dart';
@@ -13,16 +12,24 @@ import '../../../domain/display/phone_display_device.dart';
 import '../../diy/widgets/diy_sticker_image.dart';
 import '../../pet/widgets/pet_avatar.dart';
 
-/// 全屏显示页：常亮 + 沉浸式 + 点击退出
+/// 全屏显示页：常亮 + 沉浸式（点击任意处退出）
 class FullscreenDisplayPage extends ConsumerStatefulWidget {
   const FullscreenDisplayPage({
     super.key,
     this.expressionId,
     this.customText,
+    this.embedded = false,
+    this.onTapAway,
   });
 
   final String? expressionId;
   final String? customText;
+
+  /// 嵌入显示端时不抢路由 / 不重复进全屏系统态
+  final bool embedded;
+
+  /// 嵌入模式下点击空白回调（如清屏回到等待）
+  final VoidCallback? onTapAway;
 
   @override
   ConsumerState<FullscreenDisplayPage> createState() =>
@@ -34,9 +41,19 @@ class _FullscreenDisplayPageState extends ConsumerState<FullscreenDisplayPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      ref.read(screenServiceProvider).enterFullscreen();
+      if (!widget.embedded) {
+        ref.read(screenServiceProvider).enterFullscreen();
+      }
       await _warmExpressionAsset();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant FullscreenDisplayPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.expressionId != widget.expressionId) {
+      _warmExpressionAsset();
+    }
   }
 
   Future<void> _warmExpressionAsset() async {
@@ -53,6 +70,10 @@ class _FullscreenDisplayPageState extends ConsumerState<FullscreenDisplayPage> {
   }
 
   Future<void> _exit() async {
+    if (widget.embedded) {
+      widget.onTapAway?.call();
+      return;
+    }
     await ref.read(screenServiceProvider).exitFullscreen();
     if (!mounted) return;
     if (context.canPop()) {
@@ -79,12 +100,14 @@ class _FullscreenDisplayPageState extends ConsumerState<FullscreenDisplayPage> {
         final pet = snapshot.data ??
             ref.read(petRepositoryProvider).getById('cat');
         final hasCustomSticker = custom?.hasImage == true;
+        final hasBuiltinSticker = expression?.hasStickerAsset == true;
+        final showAsSticker = hasCustomSticker || hasBuiltinSticker;
         final emoji = expression?.emoji ?? '✨';
         final text = widget.customText ??
             custom?.text ??
-            expression?.subtitle ??
-            expression?.title ??
-            '';
+            (hasBuiltinSticker
+                ? ''
+                : (expression?.subtitle ?? expression?.title ?? ''));
         final action = expression?.petAction;
         final actionAsset =
             action == null ? null : pet?.resolveAsset(action: action);
@@ -92,6 +115,15 @@ class _FullscreenDisplayPageState extends ConsumerState<FullscreenDisplayPage> {
         Widget petVisual() {
           if (hasCustomSticker) {
             return DiyStickerImage.fromExpression(custom!);
+          }
+          if (hasBuiltinSticker) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                expression!.iconAsset!,
+                fit: BoxFit.contain,
+              ),
+            );
           }
           // 有动作 GIF 时用明确路径 + Key，避免仍显示待机图
           if (actionAsset != null) {
@@ -126,13 +158,6 @@ class _FullscreenDisplayPageState extends ConsumerState<FullscreenDisplayPage> {
                 textAlign: TextAlign.center,
               );
 
-        final exitHint = Text(
-          '点击退出',
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.textSecondary.withValues(alpha: 0.7),
-          ),
-        );
-
         return Scaffold(
           backgroundColor: Colors.black,
           body: GestureDetector(
@@ -154,13 +179,11 @@ class _FullscreenDisplayPageState extends ConsumerState<FullscreenDisplayPage> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                if (!hasCustomSticker) ...[
+                                if (!showAsSticker) ...[
                                   stickerOrEmoji(emojiSize: 40),
                                   const SizedBox(height: 12),
                                 ],
                                 message,
-                                const SizedBox(height: 24),
-                                exitHint,
                               ],
                             ),
                           ),
@@ -171,13 +194,11 @@ class _FullscreenDisplayPageState extends ConsumerState<FullscreenDisplayPage> {
                         children: [
                           Expanded(child: petVisual()),
                           const SizedBox(height: 16),
-                          if (!hasCustomSticker) ...[
+                          if (!showAsSticker) ...[
                             stickerOrEmoji(emojiSize: 40),
                             const SizedBox(height: 12),
                           ],
                           message,
-                          const SizedBox(height: 24),
-                          exitHint,
                           const SizedBox(height: 12),
                         ],
                       ),

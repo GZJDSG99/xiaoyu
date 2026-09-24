@@ -81,6 +81,50 @@ class LocalStorage {
   Future<void> setBackgroundId(String id) async {
     await _prefs.setString(StorageKeys.backgroundId, id);
   }
+
+  List<String> get danmakuRecent {
+    final raw = _prefs.getStringList(StorageKeys.danmakuRecent);
+    return raw ?? const [];
+  }
+
+  Future<void> setDanmakuRecent(List<String> lines) async {
+    await _prefs.setStringList(StorageKeys.danmakuRecent, lines);
+  }
+
+  double get danmakuFontSize =>
+      _prefs.getDouble(StorageKeys.danmakuFontSize) ?? 36;
+
+  Future<void> setDanmakuFontSize(double value) async {
+    await _prefs.setDouble(StorageKeys.danmakuFontSize, value);
+  }
+
+  int get danmakuColor =>
+      _prefs.getInt(StorageKeys.danmakuColor) ?? 0xFFFFFFFF;
+
+  Future<void> setDanmakuColor(int value) async {
+    await _prefs.setInt(StorageKeys.danmakuColor, value);
+  }
+
+  String get danmakuSpeed =>
+      _prefs.getString(StorageKeys.danmakuSpeed) ?? 'medium';
+
+  Future<void> setDanmakuSpeed(String value) async {
+    await _prefs.setString(StorageKeys.danmakuSpeed, value);
+  }
+
+  String? get displayRemoteHost =>
+      _prefs.getString(StorageKeys.displayRemoteHost);
+
+  Future<void> setDisplayRemoteHost(String host) async {
+    await _prefs.setString(StorageKeys.displayRemoteHost, host);
+  }
+
+  String? get displayRemoteCode =>
+      _prefs.getString(StorageKeys.displayRemoteCode);
+
+  Future<void> setDisplayRemoteCode(String code) async {
+    await _prefs.setString(StorageKeys.displayRemoteCode, code);
+  }
 }
 
 final localStorageProvider = Provider<LocalStorage>((ref) {

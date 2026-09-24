@@ -79,18 +79,23 @@ class HomeActionRail extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(6, 4, 6, 10),
-              itemCount: items.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 4),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return _RailButton(
-                  item: item,
-                  expanded: expanded,
-                  selected: item.id == selectedId,
-                );
-              },
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                scrollbars: false,
+              ),
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(6, 4, 6, 10),
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 4),
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return _RailButton(
+                    item: item,
+                    expanded: expanded,
+                    selected: item.id == selectedId,
+                  );
+                },
+              ),
             ),
           ),
         ],

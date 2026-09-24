@@ -45,7 +45,18 @@ class ExpressionDetailPage extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (actionAsset != null)
+                        if (expression.hasStickerAsset)
+                          SizedBox(
+                            height: 200,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.asset(
+                                expression.iconAsset!,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          )
+                        else if (actionAsset != null)
                           SizedBox(
                             height: 160,
                             child: OptimizedAssetImage(

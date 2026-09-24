@@ -1,0 +1,17 @@
+// Redirect Maven Central / Google Maven to China mirrors (buildscript + project).
+gradle.beforeProject { project ->
+    project.buildscript.repositories { repos ->
+        repos.maven { url 'https://maven.aliyun.com/repository/google' }
+        repos.maven { url 'https://maven.aliyun.com/repository/central' }
+        repos.maven { url 'https://maven.aliyun.com/repository/public' }
+        repos.maven { url 'https://repo.huaweicloud.com/repository/maven/' }
+        repos.maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
+    }
+    project.repositories { repos ->
+        repos.maven { url 'https://maven.aliyun.com/repository/google' }
+        repos.maven { url 'https://maven.aliyun.com/repository/central' }
+        repos.maven { url 'https://maven.aliyun.com/repository/public' }
+        repos.maven { url 'https://repo.huaweicloud.com/repository/maven/' }
+        repos.maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
+    }
+}

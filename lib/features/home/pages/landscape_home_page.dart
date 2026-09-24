@@ -7,9 +7,9 @@ import '../../../core/images/asset_warmup.dart';
 import '../../../data/models/expression.dart';
 import '../../../data/models/home_background.dart';
 import '../../../data/models/pet.dart';
-import '../../../data/repositories/pet_repository.dart';
 import '../../../domain/services/expression_playback.dart';
 import '../../../domain/services/expression_service.dart';
+import '../../pet/providers/current_pet_provider.dart';
 import '../providers/background_provider.dart';
 import '../providers/pet_form_provider.dart';
 import '../widgets/home_action_rail.dart';
@@ -27,8 +27,8 @@ class LandscapeHomePage extends ConsumerStatefulWidget {
 
 class _LandscapeHomePageState extends ConsumerState<LandscapeHomePage> {
   String? _selectedId;
-  bool _warmed = false;
-  bool _railExpanded = true;
+  String? _warmedPetId;
+  bool _railExpanded = false;
 
   Future<void> _onSelect(Expression expression) async {
     setState(() => _selectedId = expression.id);
@@ -40,10 +40,10 @@ class _LandscapeHomePageState extends ConsumerState<LandscapeHomePage> {
   }
 
   void _warmAssets(Pet? pet) {
-    if (_warmed || !mounted) return;
-    _warmed = true;
+    if (!mounted || pet == null || _warmedPetId == pet.id) return;
+    _warmedPetId = pet.id;
     final background = ref.read(effectiveBackgroundProvider);
-    final displayPet = pet?.withIdleForBackground(
+    final displayPet = pet.withIdleForBackground(
       starrySky: background.id == kStarrySkyBackgroundId,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -51,9 +51,12 @@ class _LandscapeHomePageState extends ConsumerState<LandscapeHomePage> {
       await AssetWarmup.warmHome(
         context,
         backgroundAsset: background.assetPath,
-        idlePetAsset: displayPet?.assetPath,
+        idlePetAsset: displayPet.assetPath,
       );
-      if (!mounted || pet == null) return;
+      if (!mounted || _warmedPetId != pet.id) return;
+      if (pet.jumpAssetPath != null) {
+        await AssetWarmup.warmAction(context, pet.jumpAssetPath!);
+      }
       if (pet.sleepAssetPath != null) {
         await AssetWarmup.warmAction(context, pet.sleepAssetPath!);
       }
@@ -70,97 +73,90 @@ class _LandscapeHomePageState extends ConsumerState<LandscapeHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final petFuture = ref.watch(petRepositoryProvider).getCurrent();
+    final pet = ref.watch(currentPetProvider);
     final dock = ref.watch(expressionServiceProvider).getHomeDockExpressions();
     final background = ref.watch(effectiveBackgroundProvider);
     final starry = background.id == kStarrySkyBackgroundId;
+    _warmAssets(pet);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: FutureBuilder<Pet?>(
-        future: petFuture,
-        builder: (context, snapshot) {
-          final pet = snapshot.data;
-          if (snapshot.connectionState == ConnectionState.done) {
-            _warmAssets(pet);
-          }
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              HomeBackground(assetPath: background.assetPath),
-              SafeArea(
-                child: Column(
-                  children: [
-                    _TopBar(
-                      showTransform: pet?.canTransform == true && !starry,
-                      transformed: ref.watch(kkTransformedProvider),
-                      onTransform: () {
-                        ref.read(transformTapProvider.notifier).state++;
-                      },
-                      onBackground: () => context.push('/backgrounds'),
-                      onSettings: () => context.go('/mine'),
-                    ),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          // 主内容只预留收起态宽度，展开侧栏覆盖其上，不推动宠物
-                          Positioned.fill(
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                right: HomeActionRail.collapsedWidth + 6,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(8, 0, 4, 8),
-                                child: Column(
-                                  children: [
-                                    const Spacer(flex: 5),
-                                    Expanded(
-                                      flex: 6,
-                                      child: Column(
-                                        children: [
-                                          Expanded(
-                                            child: PetWithBubble(
-                                              pet: pet,
-                                              sleepIdle: starry,
-                                              initialMessage: '今天也要开心哦～',
-                                              alignment: const Alignment(0, 1),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          const HomePageDots(),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: HomeActionRail(
-                              expressions: dock,
-                              selectedId: _selectedId,
-                              expanded: _railExpanded,
-                              onToggle: () {
-                                setState(
-                                  () => _railExpanded = !_railExpanded,
-                                );
-                              },
-                              onSelected: _onSelect,
-                              onMore: () => context.go('/expressions'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          HomeBackground(assetPath: background.assetPath),
+          SafeArea(
+            child: Column(
+              children: [
+                _TopBar(
+                  showTransform: pet?.canTransform == true && !starry,
+                  transformed: ref.watch(kkTransformedProvider),
+                  onTransform: () {
+                    ref.read(transformTapProvider.notifier).state++;
+                  },
+                  onBackground: () => context.push('/backgrounds'),
+                  onSettings: () => context.go('/mine'),
                 ),
-              ),
-            ],
-          );
-        },
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // 主内容只预留收起态宽度，展开侧栏覆盖其上，不推动宠物
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            right: HomeActionRail.collapsedWidth + 6,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 0, 4, 8),
+                            child: Column(
+                              children: [
+                                const Spacer(flex: 5),
+                                Expanded(
+                                  flex: 6,
+                                  child: Column(
+                                    children: [
+                                      Expanded(
+                                        child: PetWithBubble(
+                                          key: ValueKey(pet?.id ?? 'none'),
+                                          pet: pet,
+                                          sleepIdle: starry,
+                                          initialMessage: '今天也要开心哦～',
+                                          alignment: const Alignment(0, 1),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      const HomePageDots(),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: HomeActionRail(
+                          expressions: dock,
+                          selectedId: _selectedId,
+                          expanded: _railExpanded,
+                          onToggle: () {
+                            setState(
+                              () => _railExpanded = !_railExpanded,
+                            );
+                          },
+                          onSelected: _onSelect,
+                          onMore: () => context.go('/expressions'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -13,6 +13,7 @@ class OneShotAssetGif extends StatefulWidget {
     this.alignment = Alignment.bottomCenter,
     /// 播放到总时长的该比例即结束（如 0.9 = 播 90%）
     this.playFraction = 1.0,
+    this.onReady,
     this.onCompleted,
   });
 
@@ -20,6 +21,8 @@ class OneShotAssetGif extends StatefulWidget {
   final BoxFit fit;
   final Alignment alignment;
   final double playFraction;
+  /// 首帧解码完成、可以开始显示时回调
+  final VoidCallback? onReady;
   final VoidCallback? onCompleted;
 
   @override
@@ -83,6 +86,7 @@ class _OneShotAssetGifState extends State<OneShotAssetGif> {
       _cutoffMs = (totalMs * fraction).round().clamp(1, totalMs);
       if (!mounted) return;
       setState(() => _loaded = true);
+      widget.onReady?.call();
       if (_frames.length <= 1) {
         _finish();
       } else {

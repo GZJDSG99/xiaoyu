@@ -4,18 +4,30 @@ class HomeBackgroundOption {
   final String name;
   final String? assetPath;
 
+  /// 非空时仅该宠物可选/展示为专属背景
+  final String? exclusivePetId;
+
   /// assetPath 为空时使用内置渐变占位
   const HomeBackgroundOption({
     required this.id,
     required this.name,
     this.assetPath,
+    this.exclusivePetId,
   });
 
   bool get isAsset => assetPath != null && assetPath!.isNotEmpty;
+
+  bool get isExclusive => exclusivePetId != null;
+
+  bool isAvailableForPet(String? petId) {
+    if (exclusivePetId == null) return true;
+    return petId != null && petId == exclusivePetId;
+  }
 }
 
-const kDefaultBackgroundId = 'moon_garden';
+const kDefaultBackgroundId = 'grassland';
 const kStarrySkyBackgroundId = 'starry_sky';
+const kCoolBgBackgroundId = 'cool_bg';
 
 /// 夜间：19:00（含）～次日 05:00（不含）
 bool isNightHours([DateTime? now]) {
@@ -45,6 +57,12 @@ const kHomeBackgrounds = <HomeBackgroundOption>[
     assetPath: 'assets/backgrounds/StarrySky.webp',
   ),
   HomeBackgroundOption(
+    id: kCoolBgBackgroundId,
+    name: '酷B舞台',
+    assetPath: 'assets/backgrounds/cool-bg.webp',
+    exclusivePetId: 'bear',
+  ),
+  HomeBackgroundOption(
     id: 'cabin',
     name: '车载氛围',
   ),
@@ -53,17 +71,23 @@ const kHomeBackgrounds = <HomeBackgroundOption>[
 HomeBackgroundOption backgroundById(String? id) {
   return kHomeBackgrounds.firstWhere(
     (e) => e.id == id,
-    orElse: () => kHomeBackgrounds.first,
+    orElse: () => kHomeBackgrounds.firstWhere(
+      (e) => e.id == kDefaultBackgroundId,
+    ),
   );
 }
 
-/// 夜间强制星空；白天用用户选择
+/// 夜间强制星空；白天用用户选择（专属背景需匹配当前宠物）
 HomeBackgroundOption effectiveBackground(
   HomeBackgroundOption selected, [
   DateTime? now,
+  String? currentPetId,
 ]) {
   if (isNightHours(now)) {
     return backgroundById(kStarrySkyBackgroundId);
+  }
+  if (!selected.isAvailableForPet(currentPetId)) {
+    return backgroundById(kDefaultBackgroundId);
   }
   return selected;
 }

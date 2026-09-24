@@ -50,6 +50,11 @@ class MainShell extends StatelessWidget {
                   label: 'DIY',
                 ),
                 NavigationDestination(
+                  icon: Icon(Icons.subtitles_outlined),
+                  selectedIcon: Icon(Icons.subtitles),
+                  label: '弹幕',
+                ),
+                NavigationDestination(
                   icon: Icon(Icons.person_outline),
                   selectedIcon: Icon(Icons.person),
                   label: '我的',

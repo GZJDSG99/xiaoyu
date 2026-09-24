@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../local/local_storage.dart';
+import '../models/home_background.dart';
 import '../models/pet.dart';
 import '../models/pet_enums.dart';
 
@@ -12,28 +13,30 @@ const kDefaultPets = <Pet>[
     personality: '温柔治愈',
     emoji: '🐱',
     recommendedEmotions: ['谢谢', '抱歉', '开心'],
-    assetPath: 'assets/pets/cat/xiaoyu-miao-breath.gif',
+    assetPath: 'assets/pets/cat/xiaoyu-miao-breath.webp',
     cardAssetPath: 'assets/pets/cat/xiaoyu-miao-card.gif',
     actionAssets: {
       PetAction.goodbye: 'assets/pets/cat/xiaoyu-miao-byb.gif',
-      PetAction.love: 'assets/pets/cat/xiaoyu-miao-happy.gif',
-      PetAction.thank: 'assets/pets/cat/xiaoyu-miao-thanks.gif',
-      PetAction.laugh: 'assets/pets/cat/laugh.gif',
-      PetAction.sleep: 'assets/pets/cat/sleep.gif',
+      PetAction.love: 'assets/pets/cat/xiaoyu-miao-happy.webp',
+      PetAction.thank: 'assets/pets/cat/xiaoyu-miao-thanks.webp',
+      PetAction.laugh: 'assets/pets/cat/laugh.webp',
+      PetAction.sleep: 'assets/pets/cat/sleep.webp',
     },
-    jumpAssetPath: 'assets/pets/cat/jump.gif',
-    sleepAssetPath: 'assets/pets/cat/home-sleep.gif',
-    transformAssetPath: 'assets/pets/cat/change-kk.gif',
-    transformedIdleAssetPath: 'assets/pets/cat/kk.gif',
+    jumpAssetPath: 'assets/pets/cat/jump.webp',
+    sleepAssetPath: 'assets/pets/cat/home-sleep.webp',
+    transformAssetPath: 'assets/pets/cat/change-kk.webp',
+    transformedIdleAssetPath: 'assets/pets/cat/kk.webp',
   ),
   Pet(
     id: 'bear',
-    name: '小熊',
-    personality: '憨厚可靠',
+    name: '酷B',
+    personality: '酷炫自信',
     emoji: '🐻',
     recommendedEmotions: ['收到', '感谢'],
-    assetPath: 'assets/pets/bear/',
-    available: false,
+    assetPath: 'assets/pets/bear/coolBear-wink.webp',
+    cardAssetPath: 'assets/pets/bear/coolBear-wink.webp',
+    exclusiveBackgroundId: kCoolBgBackgroundId,
+    available: true,
   ),
   Pet(
     id: 'dog',
